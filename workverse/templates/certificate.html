@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Certificate - {{ simulation.title }} - WorkVerse{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Print/PDF Styles */
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+    
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        body {
+            background: white !important;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .certificate-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-inside: avoid;
+        }
+        .certificate {
+            width: 297mm !important;
+            height: 210mm !important;
+            margin: 0 auto !important;
+            padding: 20mm !important;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+        }
+    }
+    
+    /* Screen Styles */
+    @media screen {
+        .certificate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 15px solid #FFD700;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+    }
+    
+    .certificate::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255,255,255,0.03) 10px,
+            rgba(255,255,255,0.03) 20px
+        );
+    }
+    
+    .certificate-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .seal {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #FFD700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #667eea;
+        box-shadow: 0 0 20px rgba(255,215,0,0.5);
+    }
+    
+    @media print {
+        .seal {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        .certificate {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: 15px solid #FFD700 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 no-print">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Certificate</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="container certificate-container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Action Buttons -->
+            <div class="text-center mb-4 no-print">
+                <button onclick="window.print()" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-printer-fill"></i> Print Certificate
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Certificate -->
+            <div class="certificate p-5 text-center text-white">
+                <div class="certificate-content">
+                    <!-- Header -->
+                    <div class="mb-4">
+                        <i class="bi bi-award-fill" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h1 class="display-3 fw-bold mb-4" style="font-family: 'Georgia', serif;">
+                        Certificate of Completion
+                    </h1>
+                    
+                    <div class="my-5">
+                        <p class="h5 mb-3">This is to certify that</p>
+                        <h2 class="display-4 fw-bold mb-4" style="color: #FFD700; font-family: 'Georgia', serif;">
+                            {{ user_name }}
+                        </h2>
+                        <p class="h5 mb-3">has successfully completed the</p>
+                        <h3 class="display-6 fw-bold mb-4" style="font-family: 'Georgia', serif;">
+                            {{ simulation.title }}
+                        </h3>
+                        <p class="h5 mb-0">Job Role Simulation</p>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="row justify-content-center mb-5">
+                        <div class="col-md-8">
+                            <div class="row text-start">
+                                <div class="col-6">
+                                    <p class="mb-2">
+                                        <strong>Completion Date:</strong><br>
+                                        {{ completion_date.strftime('%B %d, %Y') }}
+                                    </p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="mb-2">
+                                        <strong>Certificate ID:</strong><br>
+                                        WV-{{ simulation.simulation_id }}-{{ current_user.id }}-{{ completion_date.strftime('%Y%m%d') }}
+                                    </p>
+                                </div>
+                            </div>
+                            {% if simulation.score %}
+                            <div class="mt-3">
+                                <p class="mb-0">
+                                    <strong>Quiz Score:</strong> {{ simulation.score }}%
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Seal and Signature -->
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-md-4">
+                            <div class="seal mx-auto">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-8 text-start mt-4 mt-md-0">
+                            <div class="border-top border-white pt-2" style="max-width: 300px;">
+                                <p class="mb-0 fw-bold">WorkVerse Administration</p>
+                                <p class="small mb-0">Job Simulation Platform</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-5 pt-4 border-top border-white">
+                        <p class="small mb-0">
+                            <i class="bi bi-shield-check"></i> 
+                            This certificate is issued by WorkVerse and verifies the successful completion of the job role simulation program.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="card mt-4 no-print">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-info-circle-fill text-info"></i> About This Certificate
+                    </h5>
+                    <p class="mb-2">
+                        <strong>Skills Validated:</strong>
+                    </p>
+                    <ul class="mb-3">
+                        <li>Understanding of {{ simulation.title }} role and responsibilities</li>
+                        <li>Completion of practical assignments and assessments</li>
+                        <li>Demonstration of knowledge through quiz performance</li>
+                    </ul>
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-calendar-check"></i> 
+                        You can print this certificate or save it as PDF for your records.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

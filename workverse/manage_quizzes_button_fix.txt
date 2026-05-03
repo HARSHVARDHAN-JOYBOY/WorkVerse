@@ -1,0 +1,11 @@
+                            <div class="btn-group ms-3">
+                                <!-- UPDATED: Link to edit page instead of modal -->
+                                <a href="{{ url_for('edit_quiz_question', quiz_id=quiz.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteQuiz({{ quiz.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>

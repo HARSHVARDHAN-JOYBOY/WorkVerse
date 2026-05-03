@@ -1,0 +1,364 @@
+/* WorkVerse - Custom Stylesheet */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0dcaf0;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 400px;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Feature Icons */
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+/* Card Hover Effect */
+.hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Badges */
+.badge {
+    font-weight: 600;
+    padding: 0.4em 0.8em;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Form Styles */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* Button Enhancements */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 0.5rem 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Card Styles */
+.card {
+    border-radius: 12px;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+    font-weight: 600;
+}
+
+/* Learning Content */
+.learning-content {
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+/* Quiz Styles */
+.question-card {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.question-card:hover {
+    background-color: #e9ecef;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Progress Indicators */
+.progress {
+    height: 8px;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* Table Styles */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.modal-footer {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Utility Classes */
+.text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.shadow-soft {
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .hero-section {
+        min-height: 300px;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+}
+
+/* Loading Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Certificate Page Print Styles */
+@media print {
+    body {
+        background: white !important;
+    }
+    
+    .navbar,
+    .footer,
+    .no-print {
+        display: none !important;
+    }
+    
+    .certificate {
+        page-break-inside: avoid;
+    }
+}
+
+/* Status Badge Colors */
+.badge.bg-pending {
+    background-color: var(--warning-color) !important;
+}
+
+.badge.bg-approved {
+    background-color: var(--success-color) !important;
+}
+
+.badge.bg-rejected {
+    background-color: var(--danger-color) !important;
+}
+
+/* Admin Dashboard Cards */
+.admin-stat-card {
+    border-left: 4px solid;
+}
+
+.admin-stat-card.primary {
+    border-left-color: var(--primary-color);
+}
+
+.admin-stat-card.success {
+    border-left-color: var(--success-color);
+}
+
+.admin-stat-card.warning {
+    border-left-color: var(--warning-color);
+}
+
+.admin-stat-card.info {
+    border-left-color: var(--info-color);
+}
+
+/* File Upload Styling */
+.form-control[type="file"] {
+    padding: 0.75rem;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button {
+    padding: 0.5rem 1rem;
+    margin-right: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Quiz Item Styling */
+.quiz-item {
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.quiz-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Sticky Sidebar */
+.sticky-top {
+    position: sticky;
+    z-index: 1020;
+}
+
+/* Breadcrumb Styling */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    font-size: 1.2rem;
+}
+
+/* Custom Scrollbar for Modal */
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Video Container */
+.ratio {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

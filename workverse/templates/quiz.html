@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz: {{ simulation.title }} - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('simulation', simulation_id=simulation.id) }}">{{ simulation.title }}</a></li>
+            <li class="breadcrumb-item active">Quiz</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-clipboard-check-fill"></i> 
+                        {{ simulation.title }} - Quiz
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle-fill"></i> 
+                        <strong>Instructions:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Total Questions: {{ questions|length }}</li>
+                            <li>Passing Score: {{ simulation.passing_percentage }}%</li>
+                            <li>Select the best answer for each question</li>
+                            <li>You can retake the quiz if you don't pass</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('quiz', simulation_id=simulation.id) }}" id="quizForm">
+                        {% for question in questions %}
+                        <div class="question-card mb-4 p-4 border rounded">
+                            <h5 class="mb-3">
+                                <span class="badge bg-primary">Question {{ loop.index }}</span>
+                            </h5>
+                            <p class="fw-bold mb-3">{{ question.question }}</p>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" 
+                                       name="question_{{ question.id }}" 
+                                       id="q{{ question.id }}_opt1" 
+                                       value="1" required>
+                                <label class="form-check-label" for="q{{ question.id }}_opt1">
+                                    A. {{ question.option1 }}
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" 
+                                       name="question_{{ question.id }}" 
+                                       id="q{{ question.id }}_opt2" 
+                                       value="2" required>
+                                <label class="form-check-label" for="q{{ question.id }}_opt2">
+                                    B. {{ question.option2 }}
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" 
+                                       name="question_{{ question.id }}" 
+                                       id="q{{ question.id }}_opt3" 
+                                       value="3" required>
+                                <label class="form-check-label" for="q{{ question.id }}_opt3">
+                                    C. {{ question.option3 }}
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" 
+                                       name="question_{{ question.id }}" 
+                                       id="q{{ question.id }}_opt4" 
+                                       value="4" required>
+                                <label class="form-check-label" for="q{{ question.id }}_opt4">
+                                    D. {{ question.option4 }}
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle-fill"></i> Submit Quiz
+                            </button>
+                            <a href="{{ url_for('simulation', simulation_id=simulation.id) }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Simulation
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('quizForm').addEventListener('submit', function(e) {
+    if (!confirm('Are you sure you want to submit your quiz? Make sure you have answered all questions.')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

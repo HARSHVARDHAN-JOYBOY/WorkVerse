@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-page">
+                <h1 class="display-1 text-danger fw-bold">500</h1>
+                <h2 class="mb-4">Internal Server Error</h2>
+                <p class="text-muted mb-4">
+                    Something went wrong on our end. We're working to fix it!
+                    Please try again later.
+                </p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{{ url_for('home') }}" class="btn btn-primary">
+                        <i class="bi bi-house-fill"></i> Go Home
+                    </a>
+                    <button onclick="location.reload()" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Page
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

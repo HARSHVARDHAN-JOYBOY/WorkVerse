@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}{{ simulation.title }} - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ simulation.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h1 class="fw-bold mb-3">
+                        <i class="bi bi-briefcase-fill text-primary"></i> 
+                        {{ simulation.title }}
+                    </h1>
+                    <p class="lead text-muted">{{ simulation.description }}</p>
+
+                    <!-- Video Section (from first lesson or simulation) -->
+                    {% if simulation.video_url %}
+                    <div class="mb-4">
+                        <h4 class="mb-3">
+                            <i class="bi bi-play-circle-fill text-danger"></i> Tutorial Video
+                        </h4>
+                        <div class="ratio ratio-16x9">
+                            <iframe src="{{ simulation.video_url }}" 
+                                    title="Tutorial Video" 
+                                    allowfullscreen></iframe>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Lessons Section -->
+                    {% if lessons %}
+                    <div class="mb-4">
+                        <h4 class="mb-3">
+                            <i class="bi bi-book-fill text-success"></i> Learning Modules
+                        </h4>
+                        
+                        <div class="accordion" id="lessonsAccordion">
+                            {% for lesson in lessons %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ lesson.id }}">
+                                    <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse{{ lesson.id }}"
+                                            aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
+                                            aria-controls="collapse{{ lesson.id }}">
+                                        <span class="badge bg-primary me-2">{{ lesson.lesson_order }}</span>
+                                        {{ lesson.title }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ lesson.id }}" 
+                                     class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+                                     aria-labelledby="heading{{ lesson.id }}"
+                                     data-bs-parent="#lessonsAccordion">
+                                    <div class="accordion-body">
+                                        {% if lesson.video_url %}
+                                        <div class="ratio ratio-16x9 mb-3">
+                                            <iframe src="{{ lesson.video_url }}" 
+                                                    title="{{ lesson.title }}" 
+                                                    allowfullscreen></iframe>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="learning-content">
+                                            {{ lesson.content|replace('\n', '<br>')|safe }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Fallback to simulation content if no lessons -->
+                    <div class="mb-4">
+                        <h4 class="mb-3">
+                            <i class="bi bi-book-fill text-success"></i> Learning Content
+                        </h4>
+                        <div class="learning-content">
+                            {{ simulation.content|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Task Instructions -->
+                    {% if simulation.task_instructions %}
+                    <div class="mb-4">
+                        <h4 class="mb-3">
+                            <i class="bi bi-clipboard-check-fill text-warning"></i> Task Instructions
+                        </h4>
+                        <div class="alert alert-info">
+                            {{ simulation.task_instructions|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Progress Card -->
+            <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-graph-up-arrow"></i> Your Progress
+                    </h5>
+
+                    {% if progress.status == 'enrolled' %}
+                        <div class="alert alert-primary">
+                            <i class="bi bi-info-circle-fill"></i> 
+                            <strong>Enrolled</strong>
+                            <p class="mb-0 small">Complete the learning materials above, then take the quiz.</p>
+                        </div>
+                        <a href="{{ url_for('quiz', simulation_id=simulation.id) }}" 
+                           class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-pencil-square"></i> Take Quiz
+                        </a>
+
+                    {% elif progress.status == 'quiz_completed' %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill"></i> 
+                            <strong>Quiz Completed!</strong>
+                            <p class="mb-0 small">Score: {{ progress.score }}%</p>
+                        </div>
+                        <a href="{{ url_for('upload_ppt', simulation_id=simulation.id) }}" 
+                           class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-upload"></i> Upload PPT Assignment
+                        </a>
+                        <a href="{{ url_for('quiz', simulation_id=simulation.id) }}" 
+                           class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-repeat"></i> Retake Quiz
+                        </a>
+
+                    {% elif progress.status == 'submitted' %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-hourglass-split"></i> 
+                            <strong>Under Review</strong>
+                            <p class="mb-0 small">Your PPT submission is being reviewed by admin.</p>
+                        </div>
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-clock"></i> Waiting for Review
+                        </button>
+
+                    {% elif progress.status == 'completed' %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-trophy-fill"></i> 
+                            <strong>Completed!</strong>
+                            <p class="mb-0 small">Congratulations on completing this simulation.</p>
+                        </div>
+                        <a href="{{ url_for('certificate', simulation_id=simulation.id) }}" 
+                           class="btn btn-success w-100">
+                            <i class="bi bi-award-fill"></i> View Certificate
+                        </a>
+                    {% endif %}
+
+                    <hr class="my-3">
+
+                    <div class="small text-muted">
+                        <p class="mb-1">
+                            <i class="bi bi-calendar-check"></i> 
+                            Enrolled: {{ progress.created_at.strftime('%B %d, %Y') }}
+                        </p>
+                        {% if progress.score %}
+                        <p class="mb-0">
+                            <i class="bi bi-star-fill"></i> 
+                            Quiz Score: {{ progress.score }}%
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-lightbulb-fill text-warning"></i> Tips
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Watch the video tutorial carefully</li>
+                        <li>Read all learning content</li>
+                        <li>Take notes while learning</li>
+                        <li>You need 60% to pass the quiz</li>
+                        <li>You can retake the quiz if needed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

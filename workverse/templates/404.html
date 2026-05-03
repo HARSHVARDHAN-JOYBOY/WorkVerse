@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-page">
+                <h1 class="display-1 text-primary fw-bold">404</h1>
+                <h2 class="mb-4">Page Not Found</h2>
+                <p class="text-muted mb-4">
+                    Oops! The page you're looking for doesn't exist. 
+                    It might have been moved or deleted.
+                </p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{{ url_for('home') }}" class="btn btn-primary">
+                        <i class="bi bi-house-fill"></i> Go Home
+                    </a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-grid-fill"></i> Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold">
+                <i class="bi bi-grid-fill text-primary"></i> My Dashboard
+            </h1>
+            <p class="text-muted">Welcome back, {{ current_user.name }}!</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <h6 class="card-title">Enrolled</h6>
+                    <h2 class="mb-0">{{ user_progress|length }}</h2>
+                    <small>Simulations</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white shadow">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Review</h6>
+                    <h2 class="mb-0">{{ pending_submissions|length }}</h2>
+                    <small>Submissions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body">
+                    <h6 class="card-title">Completed</h6>
+                    <h2 class="mb-0">{{ certificates|length }}</h2>
+                    <small>Certificates</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body">
+                    <h6 class="card-title">Available</h6>
+                    <h2 class="mb-0">{{ simulations|length }}</h2>
+                    <small>Simulations</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Certificates -->
+    {% if certificates %}
+    <div class="mb-5">
+        <h3 class="mb-3 fw-bold">
+            <i class="bi bi-award-fill text-success"></i> My Certificates
+        </h3>
+        <div class="row g-3">
+            {% for cert in certificates %}
+            <div class="col-md-6">
+                <div class="card border-success shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title text-success">
+                                    <i class="bi bi-patch-check-fill"></i> {{ cert.title }}
+                                </h5>
+                                <p class="text-muted small mb-2">
+                                    Completed on: {{ cert.completed_at.strftime('%B %d, %Y') if cert.completed_at else 'N/A' }}
+                                </p>
+                                {% if cert.feedback %}
+                                <p class="small mb-2">
+                                    <strong>Feedback:</strong> {{ cert.feedback }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-success">Certified</span>
+                        </div>
+                        <a href="{{ url_for('certificate', simulation_id=cert.simulation_id) }}" 
+                           class="btn btn-success btn-sm mt-2">
+                            <i class="bi bi-eye-fill"></i> View Certificate
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Submissions -->
+    {% if pending_submissions %}
+    <div class="mb-5">
+        <h3 class="mb-3 fw-bold">
+            <i class="bi bi-hourglass-split text-warning"></i> Pending Review
+        </h3>
+        <div class="row g-3">
+            {% for sub in pending_submissions %}
+            <div class="col-md-6">
+                <div class="card border-warning shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title">{{ sub.title }}</h5>
+                                <p class="text-muted small mb-0">
+                                    Submitted on: {{ sub.submitted_at.strftime('%B %d, %Y') }}
+                                </p>
+                            </div>
+                            <span class="badge bg-warning">Pending</span>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">
+                            <i class="bi bi-info-circle"></i> Your submission is under review
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- My Progress -->
+    {% if user_progress %}
+    <div class="mb-5">
+        <h3 class="mb-3 fw-bold">
+            <i class="bi bi-graph-up text-info"></i> My Progress
+        </h3>
+        <div class="row g-3">
+            {% for prog in user_progress %}
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ prog.title }}</h5>
+                        <p class="card-text text-muted small">{{ prog.description[:100] }}...</p>
+                        
+                        <div class="mb-2">
+                            {% if prog.status == 'enrolled' %}
+                                <span class="badge bg-secondary">Enrolled</span>
+                            {% elif prog.status == 'quiz_completed' %}
+                                <span class="badge bg-info">Quiz Completed - {{ prog.score }}%</span>
+                            {% elif prog.status == 'submitted' %}
+                                <span class="badge bg-warning">PPT Submitted</span>
+                            {% elif prog.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% endif %}
+                        </div>
+
+                        {% if prog.status == 'enrolled' %}
+                            <a href="{{ url_for('simulation', simulation_id=prog.simulation_id) }}" 
+                               class="btn btn-primary btn-sm">
+                                <i class="bi bi-play-fill"></i> Continue Learning
+                            </a>
+                        {% elif prog.status == 'quiz_completed' %}
+                            <a href="{{ url_for('upload_ppt', simulation_id=prog.simulation_id) }}" 
+                               class="btn btn-warning btn-sm">
+                                <i class="bi bi-upload"></i> Upload PPT
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Simulations -->
+    <div class="mb-5">
+        <h3 class="mb-3 fw-bold">
+            <i class="bi bi-collection-fill text-primary"></i> Available Simulations
+        </h3>
+        <div class="row g-3">
+            {% for sim in simulations %}
+                {% if sim.id not in enrolled_ids %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm hover-lift">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="bi bi-briefcase-fill text-primary" style="font-size: 2rem;"></i>
+                            </div>
+                            <h5 class="card-title">{{ sim.title }}</h5>
+                            <p class="card-text text-muted small">{{ sim.description[:120] }}...</p>
+                            <a href="{{ url_for('simulation', simulation_id=sim.id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-play-circle"></i> Start Simulation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

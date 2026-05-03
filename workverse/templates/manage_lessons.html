@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Lessons - {{ simulation.title }} - Admin - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('manage_simulations') }}">Simulations</a></li>
+            <li class="breadcrumb-item active">{{ simulation.title }} - Lessons</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold">
+                <i class="bi bi-book-fill text-success"></i> Manage Lessons
+            </h1>
+            <p class="text-muted">Manage learning content pages for: <strong>{{ simulation.title }}</strong></p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+                <i class="bi bi-plus-circle"></i> Add Lesson
+            </button>
+        </div>
+    </div>
+
+    <!-- Lessons List -->
+    <div class="row">
+        <div class="col-12">
+            {% if lessons %}
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% for lesson in lessons %}
+                    <div class="lesson-item p-3 mb-3 border rounded {% if loop.last %}mb-0{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2">Order: {{ lesson.lesson_order }}</span>
+                                    <h5 class="mb-0">{{ lesson.title }}</h5>
+                                </div>
+                                
+                                <p class="text-muted mb-2">{{ lesson.content[:200] }}{% if lesson.content|length > 200 %}...{% endif %}</p>
+                                
+                                {% if lesson.video_url %}
+                                <div class="mb-2">
+                                    <i class="bi bi-play-circle text-danger"></i> 
+                                    <small class="text-muted">Video: {{ lesson.video_url[:50] }}...</small>
+                                </div>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> Created: {{ lesson.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                            </div>
+                            
+                            <div class="btn-group ms-3">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick='editLesson({{ lesson.id }}, {{ lesson.title|tojson }}, {{ lesson.content|tojson }}, {{ lesson.video_url|tojson }}, {{ lesson.lesson_order }})'>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick='deleteLesson({{ lesson.id }}, {{ lesson.title|tojson }})'>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 4rem;" class="text-muted"></i>
+                    <p class="text-muted mt-3">No lessons yet. Add your first lesson to start building content!</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Lesson Modal -->
+<div class="modal fade" id="addLessonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Lesson</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('manage_lessons', simulation_id=simulation.id) }}">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Lesson Title *</label>
+                        <input type="text" class="form-control" name="title" id="title" required
+                               placeholder="e.g., Introduction to Data Analysis">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Lesson Content *</label>
+                        <textarea class="form-control" name="content" id="content" rows="8" required
+                                  placeholder="Enter the detailed learning content for this lesson..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="video_url" class="form-label">YouTube Video URL (Optional)</label>
+                        <input type="url" class="form-control" name="video_url" id="video_url"
+                               placeholder="https://www.youtube.com/embed/VIDEO_ID">
+                        <div class="form-text">Use YouTube embed format</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="lesson_order" class="form-label">Display Order *</label>
+                        <input type="number" class="form-control" name="lesson_order" id="lesson_order" 
+                               value="1" min="1" required>
+                        <div class="form-text">Lessons will be displayed in this order (1, 2, 3, ...)</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Lesson
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Lesson Modal -->
+<div class="modal fade" id="editLessonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Lesson</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('manage_lessons', simulation_id=simulation.id) }}">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="lesson_id" id="edit_lesson_id">
+                    
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Lesson Title *</label>
+                        <input type="text" class="form-control" name="title" id="edit_title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_content" class="form-label">Lesson Content *</label>
+                        <textarea class="form-control" name="content" id="edit_content" rows="8" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_video_url" class="form-label">YouTube Video URL (Optional)</label>
+                        <input type="url" class="form-control" name="video_url" id="edit_video_url">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_lesson_order" class="form-label">Display Order *</label>
+                        <input type="number" class="form-control" name="lesson_order" id="edit_lesson_order" 
+                               min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form method="POST" action="{{ url_for('manage_lessons', simulation_id=simulation.id) }}" id="deleteForm">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="lesson_id" id="delete_lesson_id">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editLesson(id, title, content, video_url, lesson_order) {
+    document.getElementById('edit_lesson_id').value = id;
+    document.getElementById('edit_title').value = title;
+    document.getElementById('edit_content').value = content;
+    document.getElementById('edit_video_url').value = video_url || '';
+    document.getElementById('edit_lesson_order').value = lesson_order;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editLessonModal'));
+    modal.show();
+}
+
+function deleteLesson(id, title) {
+    if (confirm(`Are you sure you want to delete the lesson "${title}"?`)) {
+        document.getElementById('delete_lesson_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

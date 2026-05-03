@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Simulations - Admin - WorkVerse{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fw-bold">
+                <i class="bi bi-collection-fill text-success"></i> Manage Simulations
+            </h1>
+            <p class="text-muted">Add, edit, or delete job role simulations</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSimulationModal">
+                <i class="bi bi-plus-circle"></i> Add New Simulation
+            </button>
+        </div>
+    </div>
+
+    <!-- Simulations List -->
+    <div class="row">
+        <div class="col-12">
+            {% if simulations %}
+            <div class="row g-4">
+                {% for sim in simulations %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ sim.title }}</h5>
+                            <p class="card-text text-muted small">{{ sim.description[:150] }}...</p>
+                            
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> 
+                                    Created: {{ sim.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                            </div>
+
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick='editSimulation({{ sim.id }}, {{ sim.title|tojson }}, {{ sim.description|tojson }}, {{ sim.content|tojson }}, {{ sim.video_url|tojson }}, {{ sim.passing_percentage }})'>
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <a href="{{ url_for('manage_lessons', simulation_id=sim.id) }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-book"></i> Lessons
+                                </a>
+                                <a href="{{ url_for('manage_quizzes', simulation_id=sim.id) }}" 
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-question-circle"></i> Quizzes
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick='deleteSimulation({{ sim.id }}, {{ sim.title|tojson }})'>
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 4rem;" class="text-muted"></i>
+                    <p class="text-muted mt-3">No simulations yet. Create your first one!</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Simulation Modal -->
+<div class="modal fade" id="addSimulationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Simulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('manage_simulations') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add">
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Simulation Title *</label>
+                        <input type="text" class="form-control" name="title" id="title" required 
+                               placeholder="e.g., Data Analyst">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Short Description *</label>
+                        <textarea class="form-control" name="description" id="description" rows="2" required
+                                  placeholder="Brief description of the simulation"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Learning Content *</label>
+                        <textarea class="form-control" name="content" id="content" rows="6" required
+                                  placeholder="Detailed learning content, skills, and information"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="video_url" class="form-label">YouTube Video URL (Embed Link)</label>
+                        <input type="url" class="form-control" name="video_url" id="video_url"
+                               placeholder="https://www.youtube.com/embed/VIDEO_ID">
+                        <div class="form-text">Use YouTube embed format, not watch URL</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="passing_percentage" class="form-label">Passing Percentage *</label>
+                        <input type="number" class="form-control" name="passing_percentage" id="passing_percentage" 
+                               min="0" max="100" value="60" required>
+                        <div class="form-text">Minimum percentage required to pass the quiz (default: 60%)</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Simulation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Simulation Modal -->
+<div class="modal fade" id="editSimulationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Simulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('manage_simulations') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="simulation_id" id="edit_sim_id">
+                    
+                    <div class="mb-3">
+                        <label for="edit_title" class="form-label">Simulation Title *</label>
+                        <input type="text" class="form-control" name="title" id="edit_title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Short Description *</label>
+                        <textarea class="form-control" name="description" id="edit_description" rows="2" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_content" class="form-label">Learning Content *</label>
+                        <textarea class="form-control" name="content" id="edit_content" rows="6" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_video_url" class="form-label">YouTube Video URL (Embed Link)</label>
+                        <input type="url" class="form-control" name="video_url" id="edit_video_url">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_passing_percentage" class="form-label">Passing Percentage *</label>
+                        <input type="number" class="form-control" name="passing_percentage" id="edit_passing_percentage" 
+                               min="0" max="100" required>
+                        <div class="form-text">Minimum percentage required to pass the quiz</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form method="POST" action="{{ url_for('manage_simulations') }}" id="deleteForm">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="simulation_id" id="delete_sim_id">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editSimulation(id, title, description, content, video_url, passing_percentage) {
+    document.getElementById('edit_sim_id').value = id;
+    document.getElementById('edit_title').value = title;
+    document.getElementById('edit_description').value = description;
+    document.getElementById('edit_content').value = content;
+    document.getElementById('edit_video_url').value = video_url || '';
+    document.getElementById('edit_passing_percentage').value = passing_percentage || 60;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editSimulationModal'));
+    modal.show();
+}
+
+function deleteSimulation(id, title) {
+    if (confirm(`Are you sure you want to delete "${title}"? This will delete all associated lessons, quizzes and progress data.`)) {
+        document.getElementById('delete_sim_id').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+{% endblock %}

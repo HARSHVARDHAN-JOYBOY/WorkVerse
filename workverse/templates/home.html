@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-gradient-primary text-white py-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Master Real-World Job Skills</h1>
+                <p class="lead mb-4">
+                    Experience professional work environments through interactive simulations. 
+                    Learn, practice, and earn certificates in various job roles.
+                </p>
+                {% if not current_user.is_authenticated %}
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-4">
+                        Get Started Free
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">
+                        Login
+                    </a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-lg px-4">
+                    Go to Dashboard
+                </a>
+                {% endif %}
+            </div>
+            <div class="col-lg-6 text-center mt-4 mt-lg-0">
+                <i class="bi bi-laptop display-1"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon bg-primary text-white rounded-circle mx-auto mb-3">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                    <h5>Register</h5>
+                    <p class="text-muted">Create your free account to get started</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon bg-success text-white rounded-circle mx-auto mb-3">
+                        <i class="bi bi-book-fill"></i>
+                    </div>
+                    <h5>Learn</h5>
+                    <p class="text-muted">Access job simulations with video tutorials</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon bg-warning text-white rounded-circle mx-auto mb-3">
+                        <i class="bi bi-clipboard-check-fill"></i>
+                    </div>
+                    <h5>Practice</h5>
+                    <p class="text-muted">Complete quizzes and assignments</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="feature-icon bg-info text-white rounded-circle mx-auto mb-3">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <h5>Certify</h5>
+                    <p class="text-muted">Earn certificates upon completion</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Simulations Preview -->
+{% if simulations %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold">Popular Job Simulations</h2>
+        <div class="row g-4">
+            {% for sim in simulations %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm hover-lift">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="bi bi-briefcase-fill text-primary fs-1"></i>
+                        </div>
+                        <h5 class="card-title">{{ sim.title }}</h5>
+                        <p class="card-text text-muted small">{{ sim.description[:100] }}...</p>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('simulation', simulation_id=sim.id) }}" class="btn btn-primary btn-sm">
+                            Start Learning
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                            Login to Start
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA Section -->
+{% if not current_user.is_authenticated %}
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Start Your Journey?</h2>
+        <p class="lead mb-4">Join thousands of learners mastering real-world job skills</p>
+        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5">
+            Create Free Account
+        </a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
