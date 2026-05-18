@@ -7,10 +7,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-change-in-production'
     
     # MySQL Database configuration
-    DB_HOST = os.environ.get('DB_HOST') or 'localhost'
+    DB_HOST = os.environ.get('DB_HOST') or 'mysql.railway.internal'
     DB_USER = os.environ.get('DB_USER') or 'root'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD') or ''
-    DB_NAME = os.environ.get('DB_NAME') or 'workverse_db'
+    DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'lYsTdHBWArwwUmxMBqdNWNXQfRDqNrAT'
+    DB_NAME = os.environ.get('DB_NAME') or 'railway'
     
     # File upload configuration
     UPLOAD_FOLDER = 'uploads'
