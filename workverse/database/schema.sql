@@ -1,8 +1,8 @@
 -- WorkVerse Database Schema
 -- Drop database if exists and create fresh
-DROP DATABASE IF EXISTS workverse_db;
-CREATE DATABASE workverse_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE workverse_db;
+-- DROP DATABASE IF EXISTS workverse_db;
+-- CREATE DATABASE workverse_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE workverse_db;
 
 -- Users table
 CREATE TABLE users (
