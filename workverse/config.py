@@ -3,15 +3,14 @@ import os
 class Config:
     """Application configuration"""
 
-    # Secret key
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'my-super-secret-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
 
-    # Railway MySQL configuration
+    # Railway MySQL Configuration
     DB_HOST = os.environ.get('DB_HOST') or 'mainline.proxy.rlwy.net'
+    DB_PORT = os.environ.get('DB_PORT') or '43679'
     DB_USER = os.environ.get('DB_USER') or 'root'
     DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'lYsTdHBWArwwUmxMBqdNWNXQfRDqNrAT'
     DB_NAME = os.environ.get('DB_NAME') or 'railway'
-    DB_PORT = int(os.environ.get('DB_PORT') or 43679)
 
     # File upload configuration
     UPLOAD_FOLDER = 'uploads'
