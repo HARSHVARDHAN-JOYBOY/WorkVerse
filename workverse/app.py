@@ -22,10 +22,12 @@ def get_db_connection():
     """Create and return MySQL database connection"""
     return pymysql.connect(
         host=app.config['DB_HOST'],
+        port=int(app.config['DB_PORT']),
         user=app.config['DB_USER'],
         password=app.config['DB_PASSWORD'],
         database=app.config['DB_NAME'],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
+        ssl={"ssl": {}}
     )
 
 # ============================================
