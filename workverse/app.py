@@ -1,12 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
+﻿from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
+from contextlib import contextmanager
 import pymysql
 import os
+import time
+import logging
 from datetime import datetime
 from config import Config
+
+# Configure application logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+logger = logging.getLogger('workverse')
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -17,33 +24,115 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 
-# Database connection helper
-# def get_db_connection():
-#     """Create and return MySQL database connection"""
-#     return pymysql.connect(
-#         host=app.config['DB_HOST'],
-#         port=int(app.config['DB_PORT']),
-#         user=app.config['DB_USER'],
-#         password=app.config['DB_PASSWORD'],
-#         database=app.config['DB_NAME'],
-#         cursorclass=pymysql.cursors.DictCursor,
-#         ssl={"ssl": {}}
-#     )
+# Retryable MySQL error codes for transient cloud and serverless wake-up blips
+RETRYABLE_MYSQL_ERRORS = {
+    2002,  # CR_CONNECTION_ERROR (Connection refused / network unreachable)
+    2003,  # CR_CONN_HOST_ERROR (Can't connect to MySQL server / waking up)
+    2006,  # CR_SERVER_GONE_ERROR (MySQL server has gone away)
+    2013,  # CR_SERVER_LOST (Lost connection to MySQL server during query / handshake EOF)
+}
 
-# Database connection helper
+# Database connection helper with cold-start retry logic
 def get_db_connection():
-    """Create and return MySQL database connection"""
-    return pymysql.connect(
-        host=app.config['DB_HOST'],
-        port=int(app.config['DB_PORT']),
-        user=app.config['DB_USER'],
-        password=app.config['DB_PASSWORD'],
-        database=app.config['DB_NAME'],
-        cursorclass=pymysql.cursors.DictCursor,
-        connect_timeout=30,
-        read_timeout=30,
-        write_timeout=30
-    )
+    """
+    Create and return a MySQL database connection.
+    Engineered for Railway Serverless sleep/wake resilience:
+    - Retries on initial handshake drops (error 2013/2003) with exponential backoff
+    - Configures connection/read/write timeouts
+    - Automatically handles SSL/TLS mode based on configuration
+    - Uses utf8mb4 charset for broad unicode support
+    - Never retries fatal authentication (1045) or missing database (1049) errors
+    - Logs helpful diagnostics without exposing sensitive credentials
+    """
+    is_valid, missing, msg = Config.validate_db_config(app.config)
+    if not is_valid:
+        app.logger.error(f"[DB Config Error] {msg}")
+        raise RuntimeError(msg)
+
+    host = app.config['DB_HOST']
+    port = int(app.config.get('DB_PORT', 3306))
+    user = app.config['DB_USER']
+    password = app.config['DB_PASSWORD']
+    database = app.config['DB_NAME']
+
+    ssl_mode = app.config.get('DB_SSL', 'auto')
+    if ssl_mode in ('true', '1', 'yes', 'require'):
+        use_ssl = True
+    elif ssl_mode in ('false', '0', 'no', 'disable'):
+        use_ssl = False
+    else:  # 'auto'
+        # Default to SSL for remote proxy hosts, non-SSL for localhost
+        use_ssl = host not in ('localhost', '127.0.0.1', '::1')
+
+    max_retries = int(app.config.get('DB_MAX_RETRIES', 5))
+    backoff = float(app.config.get('DB_RETRY_BACKOFF', 2.0))
+    connect_timeout = int(app.config.get('DB_CONNECT_TIMEOUT', 15))
+    read_timeout = int(app.config.get('DB_READ_TIMEOUT', 15))
+    write_timeout = int(app.config.get('DB_WRITE_TIMEOUT', 15))
+
+    last_exception = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            connect_kwargs = {
+                'host': host,
+                'port': port,
+                'user': user,
+                'password': password,
+                'database': database,
+                'cursorclass': pymysql.cursors.DictCursor,
+                'connect_timeout': connect_timeout,
+                'read_timeout': read_timeout,
+                'write_timeout': write_timeout,
+                'charset': 'utf8mb4'
+            }
+            if use_ssl:
+                connect_kwargs['ssl'] = {}
+
+            conn = pymysql.connect(**connect_kwargs)
+            return conn
+
+        except pymysql.err.OperationalError as e:
+            last_exception = e
+            err_code = e.args[0] if e.args else None
+            err_msg = e.args[1] if len(e.args) > 1 else str(e)
+
+            # Non-retryable fatal errors (fail immediately):
+            # 1045: Access denied (wrong user/password)
+            # 1049: Unknown database (wrong DB_NAME)
+            # 1146: Table doesn't exist
+            if err_code in (1045, 1049, 1146):
+                app.logger.critical(f"[DB Error {err_code}] Fatal database configuration error: {err_msg}")
+                raise
+
+            # If SSL negotiation failed on 'auto', toggle SSL on next attempt
+            if ssl_mode == 'auto' and ('SSL' in str(err_msg) or 'certificate' in str(err_msg).lower()):
+                use_ssl = not use_ssl
+                app.logger.warning(f"[DB Notice] Switching SSL mode to {use_ssl} following: {err_msg}")
+
+            if err_code in RETRYABLE_MYSQL_ERRORS or 'Lost connection' in str(err_msg):
+                if attempt < max_retries:
+                    wait_time = backoff * (1.5 ** (attempt - 1))
+                    app.logger.warning(
+                        f"[DB Wakeup] Attempt {attempt}/{max_retries} failed ({err_code}: {err_msg}). "
+                        f"Database may be waking from sleep. Retrying in {wait_time:.1f}s..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+
+            raise
+
+        except Exception as e:
+            last_exception = e
+            app.logger.error(f"[DB Error] Unexpected error during connection attempt {attempt}: {type(e).__name__}: {e}")
+            if attempt < max_retries:
+                wait_time = backoff * attempt
+                time.sleep(wait_time)
+                continue
+            raise
+
+    app.logger.critical(f"[DB Exhausted] Failed to connect after {max_retries} attempts. Last error: {last_exception}")
+    raise last_exception
 
 # ============================================
 # NOTIFICATION HELPER FUNCTIONS (V1.2)
@@ -52,59 +141,70 @@ def get_db_connection():
 def create_user_notification(user_id, message, notification_type='info'):
     """Create notification for user"""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO notifications (user_id, message, type)
-        VALUES (%s, %s, %s)
-    ''', (user_id, message, notification_type))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO notifications (user_id, message, type)
+            VALUES (%s, %s, %s)
+        ''', (user_id, message, notification_type))
+        conn.commit()
+    finally:
+        conn.close()
 
 def get_user_notifications(user_id, unread_only=False):
     """Get user notifications"""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    if unread_only:
-        cursor.execute('''
-            SELECT * FROM notifications 
-            WHERE user_id = %s AND is_read = FALSE 
-            ORDER BY created_at DESC
-        ''', (user_id,))
-    else:
-        cursor.execute('''
-            SELECT * FROM notifications 
-            WHERE user_id = %s 
-            ORDER BY created_at DESC 
-            LIMIT 20
-        ''', (user_id,))
-    notifications = cursor.fetchall()
-    conn.close()
-    return notifications
+    try:
+        cursor = conn.cursor()
+        if unread_only:
+            cursor.execute('''
+                SELECT * FROM notifications 
+                WHERE user_id = %s AND is_read = FALSE 
+                ORDER BY created_at DESC
+            ''', (user_id,))
+        else:
+            cursor.execute('''
+                SELECT * FROM notifications 
+                WHERE user_id = %s 
+                ORDER BY created_at DESC 
+                LIMIT 20
+            ''', (user_id,))
+        return cursor.fetchall()
+    finally:
+        conn.close()
 
 def mark_notifications_read(user_id):
     """Mark all user notifications as read"""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE notifications 
-        SET is_read = TRUE 
-        WHERE user_id = %s AND is_read = FALSE
-    ''', (user_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE notifications 
+            SET is_read = TRUE 
+            WHERE user_id = %s AND is_read = FALSE
+        ''', (user_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
 def get_unread_count(user_id):
     """Get count of unread notifications"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT COUNT(*) as count 
-        FROM notifications 
-        WHERE user_id = %s AND is_read = FALSE
-    ''', (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result['count'] if result else 0
+    try:
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT COUNT(*) as count 
+                FROM notifications 
+                WHERE user_id = %s AND is_read = FALSE
+            ''', (user_id,))
+            result = cursor.fetchone()
+            return result['count'] if result else 0
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.warning(f"Error fetching unread count: {e}")
+        return 0
 
 # User class for Flask-Login
 class User(UserMixin):
@@ -120,14 +220,18 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-    user_data = cursor.fetchone()
-    conn.close()
-    
-    if user_data:
-        return User(user_data['id'], user_data['name'], user_data['email'], user_data['role'])
+    try:
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+            user_data = cursor.fetchone()
+            if user_data:
+                return User(user_data['id'], user_data['name'], user_data['email'], user_data['role'])
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error loading user {user_id}: {e}")
     return None
 
 # Admin required decorator
@@ -155,8 +259,11 @@ def allowed_file(filename):
 def inject_notifications():
     """Inject notification count into all templates"""
     if current_user.is_authenticated:
-        unread_count = get_unread_count(current_user.id)
-        return dict(unread_notifications_count=unread_count)
+        try:
+            unread_count = get_unread_count(current_user.id)
+            return dict(unread_notifications_count=unread_count)
+        except Exception:
+            return dict(unread_notifications_count=0)
     return dict(unread_notifications_count=0)
 
 # ============================================
@@ -165,12 +272,19 @@ def inject_notifications():
 
 @app.route('/')
 def home():
-    """Home page"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM simulations ORDER BY created_at DESC LIMIT 4')
-    simulations = cursor.fetchall()
-    conn.close()
+    """Home page - resilient to database wake-up"""
+    simulations = []
+    try:
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM simulations ORDER BY created_at DESC LIMIT 4')
+            simulations = cursor.fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error loading homepage simulations: {type(e).__name__}: {e}")
+        flash("Database service is currently initializing or temporarily unavailable. Please refresh in a moment.", "warning")
     return render_template('home.html', simulations=simulations)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -1031,6 +1145,32 @@ def uploaded_file(filename):
     """Serve uploaded files"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/health')
+def health():
+    """Health check endpoint to test application and database connectivity safely without Render Shell"""
+    status_info = {
+        'status': 'healthy',
+        'app': 'WorkVerse',
+        'database': 'unknown',
+        'db_host': app.config.get('DB_HOST', 'not set')
+    }
+    try:
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT 1 AS ping')
+            cursor.fetchone()
+            status_info['database'] = 'connected'
+            return jsonify(status_info), 200
+        finally:
+            conn.close()
+    except Exception as e:
+        status_info['status'] = 'degraded'
+        status_info['database'] = 'disconnected'
+        status_info['error_type'] = type(e).__name__
+        status_info['message'] = 'Database connection failed. Service may be sleeping or configuration needs update.'
+        return jsonify(status_info), 503
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):
@@ -1038,6 +1178,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
+    app.logger.error(f"Internal Server Error: {error}")
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
