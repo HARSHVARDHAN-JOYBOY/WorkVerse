@@ -18,6 +18,19 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 
 # Database connection helper
+# def get_db_connection():
+#     """Create and return MySQL database connection"""
+#     return pymysql.connect(
+#         host=app.config['DB_HOST'],
+#         port=int(app.config['DB_PORT']),
+#         user=app.config['DB_USER'],
+#         password=app.config['DB_PASSWORD'],
+#         database=app.config['DB_NAME'],
+#         cursorclass=pymysql.cursors.DictCursor,
+#         ssl={"ssl": {}}
+#     )
+
+# Database connection helper
 def get_db_connection():
     """Create and return MySQL database connection"""
     return pymysql.connect(
@@ -27,7 +40,9 @@ def get_db_connection():
         password=app.config['DB_PASSWORD'],
         database=app.config['DB_NAME'],
         cursorclass=pymysql.cursors.DictCursor,
-        ssl={"ssl": {}}
+        connect_timeout=30,
+        read_timeout=30,
+        write_timeout=30
     )
 
 # ============================================
